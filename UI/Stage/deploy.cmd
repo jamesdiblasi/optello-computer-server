@@ -1,0 +1,1 @@
+swa deploy --env production --deployment-token <ADD_TOKEN_HERE>

@@ -1,0 +1,22 @@
+@ComputerUse.Agent.Api_HostAddress = http://localhost:5004
+
+POST {{ComputerUse.Agent.Api_HostAddress}}/agent/TestRuns
+Content-Type: application/json
+
+{
+  TargetUrl: "asd",
+  Name: "asd",
+  AiModel: 0,
+  Steps: ["qwe"]
+}
+
+###
+
+POST {{ComputerUse.Agent.Api_HostAddress}}/agent/TestRuns
+Content-Type: application/json
+
+{
+  //StartNewTestRunRequest
+}
+
+###

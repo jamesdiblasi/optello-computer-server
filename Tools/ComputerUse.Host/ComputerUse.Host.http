@@ -1,0 +1,14 @@
+@ComputerUse.Host_HostAddress = http://localhost:5226
+
+GET {{ComputerUse.Host_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ComputerUse.Host_HostAddress}}/weatherforecast
+
+###
+
+GET {{ComputerUse.Host_HostAddress}}/weatherforecast/firefox
+
+###

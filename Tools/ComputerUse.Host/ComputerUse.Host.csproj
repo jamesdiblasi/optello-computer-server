@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>c8951037-b06a-4b2f-90fa-be3aa5fd9666</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove=".dockerignore" />
+    <None Remove="Dockerfile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.29" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ComputerUse.Application\ComputerUse.Application.csproj" />
+    <ProjectReference Include="..\ComputerUse.Contracts\ComputerUse.Contracts.csproj" />
+    <ProjectReference Include="..\ComputerUse.Core\ComputerUse.Core.csproj" />
+    <ProjectReference Include="..\ComputerUse.Infrastructure.Anthropic\ComputerUse.Infrastructure.Anthropic.csproj" />
+    <ProjectReference Include="..\ComputerUse.Infrastructure.OS\ComputerUse.Infrastructure.OS.csproj" />
+  </ItemGroup>
+
+</Project>
