@@ -58,84 +58,6 @@ namespace ComputerUse.Agent.Infrastructure.Anthropic
             this.toolsOrchestrationManager = toolsOrchestrationManager;
         }
 
-        /*
-         def _inject_prompt_caching(
-    messages: list[BetaMessageParam],
-):
-    """
-    Set cache breakpoints for the 3 most recent turns
-    one cache breakpoint is left for tools/system prompt, to be shared across sessions
-    """
-
-    breakpoints_remaining = 3
-    for message in reversed(messages):
-        if message["role"] == "user" and isinstance(
-            content := message["content"], list
-        ):
-            if breakpoints_remaining:
-                breakpoints_remaining -= 1
-                # Use type ignore to bypass TypedDict check until SDK types are updated
-                content[-1]["cache_control"] = BetaCacheControlEphemeralParam(  # type: ignore
-                    {"type": "ephemeral"}
-                )
-            else:
-                content[-1].pop("cache_control", None)
-                # we'll only every have one extra turn per loop
-                break
-         */
-        /*
-         _inject_prompt_caching(messages)
-            # Because cached reads are 10% of the price, we don't think it's
-            # ever sensible to break the cache by truncating images
-            only_n_most_recent_images = 0
-            # Use type ignore to bypass TypedDict check until SDK types are updated
-            system["cache_control"] = {"type": "ephemeral"}  # type: ignore
-         */
-        private void SetCacheControls(MessageParameters parameters, int numberItemsToCache = 3)
-        {
-            /*
-                Set cache breakpoints for the 3 most recent turns
-                one cache breakpoint is left for tools/system prompt, to be shared across sessions
-            */
-
-            var currentCachedItems = 0;
-
-            foreach (var message in parameters.Messages.AsEnumerable().Reverse())
-            {
-                if (currentCachedItems < numberItemsToCache 
-                    && message.Role == RoleType.User 
-                    && message.Content?.Count == 0)
-                {
-                    currentCachedItems++;
-
-                    foreach (var contentItem in message.Content)
-                    {
-                        contentItem.CacheControl = new CacheControl { Type = CacheControlType.ephemeral };
-                    }
-                } 
-                else
-                {
-                    foreach (var contentItem in message.Content ?? [])
-                    {
-                        contentItem.CacheControl = new CacheControl { Type = CacheControlType.ephemeral };
-                    }
-                }
-            }
-
-            // set cache for SYSTEM messages
-            foreach (var systemMessage in parameters.System ?? [])
-            {
-                systemMessage.CacheControl = new CacheControl { Type = CacheControlType.ephemeral };
-            }
-        }
-
-        private AIMessage GetSystemMessage(string identifier, string text) => new AIMessage
-        {
-            Identifier = identifier,
-            Role = AIRoleType.System,
-            Content = new List<IAIContent>() { new AITextContent { Text = text } }
-        };
-
         public async IAsyncEnumerable<AIMessage> ExecuteAsync(TestRun testRun, [EnumeratorCancellation] CancellationToken token)
         {
             var identifier = Guid.CreateVersion7().ToString();
@@ -179,29 +101,54 @@ namespace ComputerUse.Agent.Infrastructure.Anthropic
                     {
                         new SystemMessage(SYSTEM_PROMPT)
                     },
-                    PromptCaching = PromptCacheType.FineGrained
+                    PromptCaching = PromptCacheType.AutomaticToolsAndSystem
                 };
 
                 ITools? tool = null;
 
                 try
                 {
-                    yield return GetSystemMessage(identifier, "Trying to acquire the free tools. Please wait...");
+                    yield return new AIMessage
+                    {
+                        Identifier = identifier,
+                        Role = AIRoleType.System,
+                        Content = new List<IAIContent>() { new AITextContent { Text = "Trying to acquire the free tools. Please wait..." } }
+                    };
 
                     tool = await toolsOrchestrationManager.AcquireTool();
 
-                    yield return GetSystemMessage(identifier, "Check the status of the acquired tools. Please wait...");
+                    yield return new AIMessage
+                    {
+                        Identifier = identifier,
+                        Role = AIRoleType.System,
+                        Content = new List<IAIContent>() { new AITextContent { Text = "Check the status of the acquired tools. Please wait..." } }
+                    };
 
                     if (await tool.GetStatus() != ToolStatus.Running) {
-                        yield return GetSystemMessage(identifier, "Starting the tools");
+                        yield return new AIMessage
+                        {
+                            Identifier = identifier,
+                            Role = AIRoleType.System,
+                            Content = new List<IAIContent>() { new AITextContent { Text = "Starting the tools" } }
+                        };
 
                         await tool.Start();
 
-                        yield return GetSystemMessage(identifier, "The tools was successfully started.");
+                        yield return new AIMessage
+                        {
+                            Identifier = identifier,
+                            Role = AIRoleType.System,
+                            Content = new List<IAIContent>() { new AITextContent { Text = "The tools was successfully started." } }
+                        };
                     }
                     else
                     {
-                        yield return GetSystemMessage(identifier, "The tools was initialized.");
+                        yield return new AIMessage
+                        {
+                            Identifier = identifier,
+                            Role = AIRoleType.System,
+                            Content = new List<IAIContent>() { new AITextContent { Text = "The tools was initialized." } }
+                        };
                     }
 
                     var stillRunning = true;
@@ -215,17 +162,12 @@ namespace ComputerUse.Agent.Infrastructure.Anthropic
 
                         try
                         {
-                            if (parameters.PromptCaching == PromptCacheType.FineGrained)
-                            {
-                                SetCacheControls(parameters);
-                            }
-
                             res = await client.Messages.GetClaudeMessageAsync(parameters);
                             messages.Add(res.Message);
                         }
                         catch (Exception ex)
                         {
-                            this.logger.LogError(ex, "Exception occurs during make a request to AI client.");
+                            this.logger.LogError(ex, "Exception occurs during request to AI client.");
                             throw;
                         }
 
